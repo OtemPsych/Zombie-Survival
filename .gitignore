@@ -187,3 +187,12 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+*.sln
+*.ttf
+*.wav
+*.png
+*.txt
+*.jpg
+*.dll
+*.vcxproj
+*.filters
