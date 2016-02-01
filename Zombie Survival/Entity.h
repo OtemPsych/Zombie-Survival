@@ -1,12 +1,10 @@
 #ifndef Entity_H_
 #define Entity_H_
 
-#include <SFML/System/NonCopyable.hpp>
 #include <SFML/System/Time.hpp>
 #include <SFML/Network/Packet.hpp>
-#include <SFML/Graphics/Texture.hpp>
 
-class Entity : private sf::NonCopyable
+class Entity
 {
 protected:
 	float mSpeed;
@@ -16,6 +14,9 @@ public:
 	virtual ~Entity();
 public:
 	virtual void update(sf::Time dt) = 0;
+
+	friend sf::Packet& operator<<(sf::Packet& packet, const Entity& entity);
+	friend sf::Packet& operator>>(sf::Packet& packet, Entity& entity);
 };
 #endif
 

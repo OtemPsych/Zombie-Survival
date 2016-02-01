@@ -1,18 +1,20 @@
-//#ifndef Projectile_H_
-//#define Projectile_H_
-//
-//#include <SFML/System/Time.hpp>
-//#include <SFML/Graphics/RectangleShape.hpp>
-//
-//class Projectile : public sf::RectangleShape
-//{
-//private:
-//	float		 mSpeed;
-//	sf::Vector2f mStartingPos;
-//
-//public:
-//	Projectile(float speed, sf::Vector2f pos, float angle);
-//public:
-//	bool update(sf::Time dt);
-//};
-//#endif
+#ifndef Projectile_H_
+#define Projectile_H_
+
+#include "Entity.h"
+
+#include <SFML/Graphics/RectangleShape.hpp>
+
+class Projectile : public Entity, public sf::RectangleShape
+{
+private:
+	sf::Vector2f mStartingPosition;
+	bool		 mDestroyable;
+
+public:
+	Projectile(float speed, sf::Vector2f pos, float angle);
+public:
+	virtual void update(sf::Time dt);
+	inline bool isDestroyable() const { return mDestroyable; }
+};
+#endif
