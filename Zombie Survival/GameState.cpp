@@ -67,7 +67,6 @@ bool GameState::update(sf::Time dt)
 {
 	mMutex.lock();
 	mPlayer.update(dt);
-	mMutex.unlock();
 
 	for (unsigned i = mSurvivors.size(); i < mNetwork.getTotalSurvivors(); i++)
 	{
@@ -75,11 +74,8 @@ bool GameState::update(sf::Time dt)
 		mSurvivors.back().setTexture(mTextures.get(Textures::Player));
 		mSurvivors.back().setPosition(mWorldBounds.width / 2.f, mWorldBounds.height / 2.f);
 	}
-
-	mMutex.lock();
 	for (auto& survivor : mSurvivors)
 		survivor.update(dt);
-	mMutex.unlock();
 
 	if (mZombies.empty())
 	{
@@ -90,10 +86,12 @@ bool GameState::update(sf::Time dt)
 
 	//for (auto& zombie : mZombies)
 	//	zombie.update(dt);
+	mMutex.unlock();
 
 	mCamera.update();
 	updateWaveText();
 
+	mMutex.lock();
 	for (unsigned i = 0; i < mZombies.size(); i++)
 	{
 		Player::CollisionChecker collisionChecker(mPlayer.checkCollision(mZombies[i]));
@@ -105,8 +103,11 @@ bool GameState::update(sf::Time dt)
 				Survivor::CollisionChecker survivorCollisionChecker(mSurvivors[j].checkCollision(mZombies[i]));
 				if (survivorCollisionChecker.eraseZombie)
 					mZombies.erase(mZombies.begin() + i);
+				//if (survivorCollisionChecker.erasePlayer)
+				//	mSurvivors.erase(mSurvivors.begin() + i);
 			}
 	}
+	mMutex.unlock();
 
 	return true;
 }
@@ -114,11 +115,14 @@ bool GameState::update(sf::Time dt)
 void GameState::draw()
 {
 	mWindow.draw(mGround);
+
+	mMutex.lock();
 	mWindow.draw(mPlayer);
 	for (const auto& survivor : mSurvivors)
 		mWindow.draw(survivor);
 	for (const auto& zombie : mZombies)
 		mWindow.draw(zombie);
+	mMutex.unlock();
 
 	mWindow.draw(mWaveText);
 }

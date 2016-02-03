@@ -6,6 +6,7 @@ Player::Player(sf::IntRect worldBounds, sf::RenderWindow& window,
 	pyro::SoundPlayer<Sound>& soundPlayer)
 	: Survivor(soundPlayer, window)
 	, mWorldBounds(worldBounds)
+	, mIsAlive(true)
 {
 	mMovement.up = mMovement.down = mMovement.left = mMovement.right = false;
 }
@@ -73,6 +74,15 @@ void Player::handleEvent(const sf::Event& event)
 	}
 	else
 		handleMovement(event);
+}
+
+Player::CollisionChecker Player::checkCollision(const Zombie& zombie)
+{
+	CollisionChecker collisionChecker(Survivor::checkCollision(zombie));
+	if (collisionChecker.erasePlayer)
+		mIsAlive = false;
+
+	return collisionChecker;
 }
 
 void Player::update(sf::Time dt)

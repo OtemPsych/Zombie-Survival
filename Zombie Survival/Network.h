@@ -2,6 +2,8 @@
 #define Network_H_
 
 #include "Zombie.h"
+#include "NetworkHost.h"
+#include "NetworkClient.h"
 
 #include <PYRO/StateStack.h>
 
@@ -14,38 +16,16 @@
 class Network : private sf::NonCopyable
 {
 private:
-	using Port = unsigned short;
-	using AddressList = std::vector<std::pair<sf::IpAddress, Port>>;
-private:
-	pyro::StateStack&	   mStateStack;
-	sf::Mutex&			   mMutex;
-
-	AddressList			   mAddressList;
-	sf::UdpSocket		   mSocket;
-	sf::Thread			   mThread;
-						   
-	Player*				   mPlayer;
-	std::vector<Survivor>* mSurvivors;
-	std::vector<Zombie>*   mZombies;
-	bool				   mHost;
+	bool						   mHost;
+	std::unique_ptr<NetworkHost>   mNetworkHost;
+	std::unique_ptr<NetworkClient> mNetworkClient;
 
 private:
-	void packetHandling();
-
-	void host_handleSending();
-	void host_sendNewClientInfo();
-
-	void client_handleSending();
-	void client_handleReceiving();
-	void client_addNewClient(sf::Packet& packet);
-	void client_setSurvivorInfo(sf::Packet& packet, sf::IpAddress ip, Port port);
-
 	void setup();
-	void handleConnectionTypes();
 public:
 	Network(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
 			std::vector<Survivor>* survivors, std::vector<Zombie>* zombies);
 public:
-	inline unsigned getTotalSurvivors() const { return mAddressList.size(); }
+	unsigned getTotalSurvivors() const;
 };
 #endif

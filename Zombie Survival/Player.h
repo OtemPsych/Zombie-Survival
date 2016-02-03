@@ -14,6 +14,7 @@ private:
 private:
 	Movement	mMovement;
 	sf::IntRect mWorldBounds;
+	bool		mIsAlive;
 
 private:
 	void handleWorldBoundsCollision();
@@ -25,9 +26,12 @@ public:
 		   pyro::SoundPlayer<Sound>& soundPlayer);
 public:
 	void handleEvent(const sf::Event& event);
+	virtual CollisionChecker checkCollision(const Zombie& zombie);
 	virtual void update(sf::Time dt);
 
 	friend sf::Packet& operator<<(sf::Packet& packet, Player& player);
+
+	inline bool isAlive() const { return mIsAlive; }
 };
 #endif
 

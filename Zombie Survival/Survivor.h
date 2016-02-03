@@ -34,7 +34,7 @@ public:
 	Survivor(pyro::SoundPlayer<Sound>& soundPlayer, sf::RenderWindow& window);
 	virtual ~Survivor();
 public:
-	CollisionChecker checkCollision(const Zombie& zombie);
+	virtual CollisionChecker checkCollision(const Zombie& zombie);
 	virtual void update(sf::Time dt);
 
 	void fireProjectile();

@@ -21,5 +21,5 @@ void Camera::update()
 	if (visibleArea.top >= mWorldBounds.top && visibleArea.height <= mWorldBounds.height)
 		setCenter(getCenter().x, center.y);
 
-	mWindow.setView(static_cast<sf::View>(*this));
+	mWindow.setView(*dynamic_cast<sf::View*>(this));
 }
