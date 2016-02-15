@@ -8,6 +8,7 @@
 #include <PYRO/State.h>
 #include <PYRO/ResourceTypedefs.h>
 #include <PYRO/SoundPlayer.h>
+#include <PYRO/MusicPlayer.h>
 #include <PYRO/Text.h>
 
 #include <SFML/System/Mutex.hpp>
@@ -15,11 +16,13 @@
 class GameState : public pyro::State
 {
 private:
-	enum class Textures { Ground, Player, Zombie };
+	enum class Textures { Ground, Player, Zombie, TotalTextures };
+	enum class Music { Ambient };
 private:
 	sf::IntRect						   mWorldBounds;
 	sf::Sprite						   mGround;
 	pyro::SoundPlayer<Survivor::Sound> mSoundPlayer;
+	pyro::MusicPlayer<Music>		   mMusicPlayer;
 									   
 	Player							   mPlayer;
 	std::vector<Survivor>			   mSurvivors;
@@ -30,12 +33,14 @@ private:
 									   
 	int								   mWave;
 	pyro::Text						   mWaveText;
+	pyro::Text						   mWaveTextOutline;
 	sf::Font						   mFont;
 
 	sf::Mutex						   mMutex;
 	Network							   mNetwork;
 
 private:
+	void updateWave();
 	void updateWaveText();
 	virtual void setupResources();
 public:

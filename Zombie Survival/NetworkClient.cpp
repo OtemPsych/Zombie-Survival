@@ -36,15 +36,41 @@ void NetworkClient::addNewClient(sf::Packet& packet)
 void NetworkClient::setSurvivorInfo(sf::Packet& packet, sf::IpAddress ip, Port port)
 {
 	for (unsigned i = 0; i < mAddressList.size(); i++)
-		if (ip == mAddressList[i].first)
+		if (ip == mAddressList[i].first && port == mAddressList[i].second)
 		{
 			mMutex.lock();
 			if (mSurvivors->size() > i)
 				assert(packet >> mSurvivors->at(i));
 			mMutex.unlock();
 
-			return;
+			break;
 		}
+
+	if (!packet.endOfPacket())
+	{
+		sf::Uint16 networkID;
+		assert(packet >> networkID);
+		if (static_cast<NetworkID>(networkID) == NetworkID::ZombieInfo)
+		{
+			sf::Uint16 totalZombies;
+			assert(packet >> totalZombies);
+			mMutex.lock();
+			for (unsigned i = 0; i < totalZombies; i++)
+				if (mZombies->size() > i)
+					assert(packet >> mZombies->at(i));
+			mMutex.unlock();
+		}
+	}
+}
+
+void NetworkClient::setZombieInfo(sf::Packet& packet)
+{
+	sf::Uint16 totalZombies;
+	packet >> totalZombies;
+
+	for (unsigned i = 0; i < totalZombies; i++)
+		if (mZombies->size() > i)
+			packet >> mZombies->at(i);
 }
 
 void NetworkClient::packetHandling()
@@ -67,10 +93,17 @@ void NetworkClient::handleReceiving()
 	{
 		sf::Uint16 networkID;
 		assert(packet >> networkID);
-		if (static_cast<NetworkID>(networkID) == NetworkID::PlayerInfo)
+		switch (static_cast<NetworkID>(networkID))
+		{
+		case NetworkID::PlayerInfo:
 			setSurvivorInfo(packet, ipAddress, port);
-		else if (static_cast<NetworkID>(networkID) == NetworkID::NewClient)
+			break;
+		case NetworkID::ZombieInfo:
+			setZombieInfo(packet);
+			break;
+		case NetworkID::NewClient:
 			addNewClient(packet);
+		}
 	}
 }
 

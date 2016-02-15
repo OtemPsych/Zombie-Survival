@@ -4,7 +4,7 @@
 
 Zombie::Zombie(Player* player, std::vector<Survivor>* survivors,
 			   const sf::Texture& texture, sf::IntRect worldBounds)
-	: EntitySprite(rand() / (RAND_MAX / (250.f - 100.f)) + 100.f, texture)
+	: EntitySprite(rand() / (RAND_MAX / (200.f - 80.f)) + 80.f, texture)
 	, mPlayer(player)
 	, mSurvivors(survivors)
 {

@@ -25,14 +25,36 @@ GameState::GameState(pyro::StateStack& stack, sf::RenderWindow& window)
 
 	mFont.loadFromFile("Assets/Fonts/WaveFont.ttf");
 	mWaveText.setFont(mFont);
-	mWaveText.setColor(sf::Color::Black);
-	mWaveText.setCharacterSize(40);
+	mWaveText.setColor(sf::Color::White);
+	mWaveText.setCharacterSize(50);
 	mWaveText.setStyle(sf::Text::Bold);
+
+	mWaveTextOutline = mWaveText;
+	sf::Color primaryColor(mWaveText.getColor());
+	mWaveTextOutline.setColor(sf::Color(255 - primaryColor.r, 255 - primaryColor.g, 255 - primaryColor.b));
+	mWaveTextOutline.setPosition(mWaveText.getPosition().x + 2.f, mWaveText.getPosition().y + 2.f);
+
+	mMusicPlayer.loadTheme(Music::Ambient, "Assets/Music/Ambient.wav");
+	mMusicPlayer.setVolume(35.f);
+	mMusicPlayer.play(Music::Ambient);
+}
+
+void GameState::updateWave()
+{
+	if (mZombies.empty())
+	{
+		mWave++;
+		for (int i = 0; i < mWave * 15; i++)
+			mZombies.push_back(Zombie(&mPlayer, &mSurvivors, mTextures.get(Textures::Zombie), mWorldBounds));
+
+		mNetwork.waveChanged();
+	}
 }
 
 void GameState::updateWaveText()
 {
 	mWaveText.setString("Wave " + std::to_string(mWave));
+	mWaveTextOutline.setString(mWaveText.getString());
 
 	sf::Vector2f cameraCenter(mCamera.getCenter());
 	sf::Vector2f cameraSize(mCamera.getSize());
@@ -46,6 +68,18 @@ void GameState::setupResources()
 	mTextures.load(Textures::Ground, "Assets/Textures/Ground.png");
 	mTextures.load(Textures::Player, "Assets/Textures/Player.png");
 	mTextures.load(Textures::Zombie, "Assets/Textures/Zombie.png");
+
+	for (unsigned k = 0; k < static_cast<unsigned>(Textures::TotalTextures); k++)
+	{
+		sf::Image image = mTextures.get(static_cast<Textures>(k)).copyToImage();
+		for (unsigned i = 0; i < image.getSize().x; i++)
+			for (unsigned j = 0; j < image.getSize().y; j++)
+			{
+				sf::Color pxColor(image.getPixel(i, j));
+				image.setPixel(i, j, sf::Color(pxColor.r * 0.6, pxColor.g * 0.6, pxColor.b * 0.6, pxColor.a));
+			}
+		mTextures.get(static_cast<Textures>(k)).update(image);
+	}
 
 	mSoundPlayer.loadEffect(Survivor::Sound::Gunshot, "Assets/Sounds/GunFire.wav");
 }
@@ -77,21 +111,14 @@ bool GameState::update(sf::Time dt)
 	for (auto& survivor : mSurvivors)
 		survivor.update(dt);
 
-	if (mZombies.empty())
-	{
-		mWave++;
-		for (int i = 0; i < mWave * 10; i++)
-			mZombies.push_back(Zombie(&mPlayer, &mSurvivors, mTextures.get(Textures::Zombie), mWorldBounds));
-	}
-
-	//for (auto& zombie : mZombies)
-	//	zombie.update(dt);
-	mMutex.unlock();
-
 	mCamera.update();
+
+	updateWave();
 	updateWaveText();
 
-	mMutex.lock();
+	for (auto& zombie : mZombies)
+		zombie.update(dt);
+
 	for (unsigned i = 0; i < mZombies.size(); i++)
 	{
 		Player::CollisionChecker collisionChecker(mPlayer.checkCollision(mZombies[i]));
@@ -124,5 +151,6 @@ void GameState::draw()
 		mWindow.draw(zombie);
 	mMutex.unlock();
 
+	mWindow.draw(mWaveTextOutline, mWaveText.getTransform());
 	mWindow.draw(mWaveText);
 }

@@ -31,8 +31,14 @@ void Network::setup()
 
 unsigned Network::getTotalSurvivors() const
 {
-	if (mNetworkHost != nullptr)
+	if (mHost)
 		return mNetworkHost->getTotalSurvivors();
 	else
 		return mNetworkClient->getTotalSurvivors();
+}
+
+void Network::waveChanged()
+{
+	if (mHost)
+		mNetworkHost->waveChanged();
 }

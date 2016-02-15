@@ -5,6 +5,9 @@ NetworkHost::NetworkHost(pyro::StateStack& stack, sf::Mutex& mutex, Player* play
 						 std::vector<Survivor>* survivors, std::vector<Zombie>* zombies)
 	: NetworkABC(stack, mutex, player, survivors, zombies)
 	, mThread(&NetworkHost::packetHandling, this)
+	, mWave(0)
+	, mWaveChanged(true)
+	, mNewClient(false)
 {
 	std::cout << "\nIP Address: " << sf::IpAddress::getPublicAddress().toString();
 	std::cout << "\n      Port: " << std::to_string(mSocket.getLocalPort()) << std::endl << std::endl;
@@ -52,7 +55,7 @@ void NetworkHost::handleReceiving()
 	{
 		bool found = false;
 		for (unsigned i = 0; i < mAddressList.size(); i++)
-			if (clientIP == mAddressList[i].first)
+			if (clientIP == mAddressList[i].first && clientPort == mAddressList[i].second)
 			{
 				sf::Uint16 networkID;
 				assert(clientPacket >> networkID);
@@ -70,17 +73,36 @@ void NetworkHost::handleReceiving()
 		{
 			sendNewClientInfo(clientIP, clientPort);
 			mAddressList.push_back(std::make_pair(clientIP, clientPort));
+
+			mNewClient = true;
 		}
 	}
 }
 
 void NetworkHost::handleSending()
 {
+	// Player Info
 	sf::Packet clientPacket;
 	assert(clientPacket << static_cast<sf::Uint16>(NetworkID::PlayerInfo));
 	mMutex.lock();
 	assert(clientPacket << *mPlayer);
 	mMutex.unlock();
+
+	// Zombie Info
+	if (mWaveChanged || mNewClient)
+	{
+		assert(clientPacket << static_cast<sf::Uint16>(NetworkID::ZombieInfo));
+		mMutex.lock();
+		assert(clientPacket << static_cast<sf::Uint16>(mZombies->size()));
+		for (unsigned i = 0; i < mZombies->size(); i++)
+			if (clientPacket.getDataSize() < 65500)
+				assert(clientPacket << mZombies->at(i));
+
+		mWaveChanged = false;
+		mMutex.unlock();
+
+		mNewClient = false;
+	}
 
 	for (const auto& address : mAddressList)
 		mSocket.send(clientPacket, address.first, address.second);

@@ -13,6 +13,7 @@ private:
 private:
 	void addNewClient(sf::Packet& packet);
 	void setSurvivorInfo(sf::Packet& packet, sf::IpAddress ip, Port port);
+	void setZombieInfo(sf::Packet& packet);
 
 	virtual void packetHandling();
 	virtual void handleReceiving();

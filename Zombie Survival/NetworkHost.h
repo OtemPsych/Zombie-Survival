@@ -9,6 +9,10 @@ class NetworkHost : public NetworkABC
 {
 private:
 	sf::Thread mThread;
+	int		   mWave;
+	bool	   mWaveChanged;
+
+	bool	   mNewClient;
 
 private:
 	void sendNewClientInfo(sf::IpAddress ip, Port port);
@@ -19,5 +23,6 @@ private:
 public:
 	NetworkHost(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
 				std::vector<Survivor>* survivors, std::vector<Zombie>* zombies);
+	inline void waveChanged() { mWaveChanged = true; mWave++; }
 };
 #endif
