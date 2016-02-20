@@ -33,7 +33,7 @@ private:
 									   
 	int								   mWave;
 	pyro::Text						   mWaveText;
-	pyro::Text						   mWaveTextOutline;
+	pyro::Text						   mZombiesRemaining;
 	sf::Font						   mFont;
 
 	sf::Mutex						   mMutex;
@@ -42,6 +42,7 @@ private:
 private:
 	void updateWave();
 	void updateWaveText();
+	void setupTexts();
 	virtual void setupResources();
 public:
 	GameState(pyro::StateStack& stack, sf::RenderWindow& window);

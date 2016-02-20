@@ -6,7 +6,6 @@ Player::Player(sf::IntRect worldBounds, sf::RenderWindow& window,
 	pyro::SoundPlayer<Sound>& soundPlayer)
 	: Survivor(soundPlayer, window)
 	, mWorldBounds(worldBounds)
-	, mIsAlive(true)
 {
 	mMovement.up = mMovement.down = mMovement.left = mMovement.right = false;
 }
@@ -28,9 +27,9 @@ void Player::handleWorldBoundsCollision()
 
 void Player::handleRotation()
 {
-	if (mWindow.hasFocus())
+	if (mWindow->hasFocus())
 	{
-		sf::Vector2f mousePos(mWindow.mapPixelToCoords(sf::Mouse::getPosition(mWindow)));
+		sf::Vector2f mousePos(mWindow->mapPixelToCoords(sf::Mouse::getPosition(*mWindow)));
 		sf::Vector2f distanceVec(mousePos - getPosition());
 
 		setRotation(pyro::math::toDegrees(atan2f(distanceVec.y, distanceVec.x)));
@@ -66,42 +65,44 @@ void Player::handleMovement(const sf::Event& event)
 
 void Player::handleEvent(const sf::Event& event)
 {
-	if (event.type == sf::Event::MouseButtonPressed
-		&& event.key.code == sf::Mouse::Left)
+	if (mIsAlive)
 	{
-		fireProjectile();
-		return;
+		if (event.type == sf::Event::MouseButtonPressed
+			&& event.key.code == sf::Mouse::Left)
+		{
+			fireProjectile();
+			return;
+		}
+		else
+			handleMovement(event);
 	}
-	else
-		handleMovement(event);
 }
 
 Player::CollisionChecker Player::checkCollision(const Zombie& zombie)
 {
-	CollisionChecker collisionChecker(Survivor::checkCollision(zombie));
-	if (collisionChecker.erasePlayer)
-		mIsAlive = false;
-
-	return collisionChecker;
+	return CollisionChecker(Survivor::checkCollision(zombie));
 }
 
 void Player::update(sf::Time dt)
 {
-	handleWorldBoundsCollision();
-	handleRotation();
+	if (mIsAlive)
+	{
+		handleWorldBoundsCollision();
+		handleRotation();
 
-	sf::Vector2f movement(0.f, 0.f);
-	if (mMovement.up)
-		movement.y -= mSpeed;
-	if (mMovement.down)
-		movement.y += mSpeed;
+		sf::Vector2f movement(0.f, 0.f);
+		if (mMovement.up)
+			movement.y -= mSpeed;
+		if (mMovement.down)
+			movement.y += mSpeed;
 
-	if (mMovement.left)
-		movement.x -= mSpeed;
-	if (mMovement.right)
-		movement.x += mSpeed;
+		if (mMovement.left)
+			movement.x -= mSpeed;
+		if (mMovement.right)
+			movement.x += mSpeed;
 
-	move(movement * dt.asSeconds());
+		move(movement * dt.asSeconds());
+	}
 	Survivor::update(dt);
 }
 

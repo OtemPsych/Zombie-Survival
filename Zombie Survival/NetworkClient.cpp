@@ -51,33 +51,33 @@ void NetworkClient::setSurvivorInfo(sf::Packet& packet, sf::IpAddress ip, Port p
 		sf::Uint16 networkID;
 		assert(packet >> networkID);
 		if (static_cast<NetworkID>(networkID) == NetworkID::ZombieInfo)
-		{
-			sf::Uint16 totalZombies;
-			assert(packet >> totalZombies);
-			mMutex.lock();
-			for (unsigned i = 0; i < totalZombies; i++)
-				if (mZombies->size() > i)
-					assert(packet >> mZombies->at(i));
-			mMutex.unlock();
-		}
+			setZombieInfo(packet);
 	}
 }
 
 void NetworkClient::setZombieInfo(sf::Packet& packet)
 {
+	mMutex.lock();
 	sf::Uint16 totalZombies;
-	packet >> totalZombies;
-
-	for (unsigned i = 0; i < totalZombies; i++)
-		if (mZombies->size() > i)
-			packet >> mZombies->at(i);
+	assert(packet >> totalZombies);
+	if (totalZombies == mZombies->size())
+	{
+		for (unsigned i = 0; i < mZombies->size(); i++)
+		{
+			sf::Uint16 zombieIndex;
+			assert(packet >> zombieIndex);
+			assert(packet >> mZombies->at(zombieIndex));
+		}
+	}
+	mMutex.unlock();
 }
 
 void NetworkClient::packetHandling()
 {
-	while (true)
+	while (mPlaying)
 	{
-		handleSending();
+		if (mPlayer->isAlive())
+			handleSending();
 		handleReceiving();
 
 		NetworkABC::packetHandling();
@@ -91,18 +91,21 @@ void NetworkClient::handleReceiving()
 	Port		  port;
 	if (mSocket.receive(packet, ipAddress, port) == sf::Socket::Done)
 	{
-		sf::Uint16 networkID;
-		assert(packet >> networkID);
-		switch (static_cast<NetworkID>(networkID))
+		if (!packet.endOfPacket())
 		{
-		case NetworkID::PlayerInfo:
-			setSurvivorInfo(packet, ipAddress, port);
-			break;
-		case NetworkID::ZombieInfo:
-			setZombieInfo(packet);
-			break;
-		case NetworkID::NewClient:
-			addNewClient(packet);
+			sf::Uint16 networkID;
+			assert(packet >> networkID);
+			switch (static_cast<NetworkID>(networkID))
+			{
+			case NetworkID::PlayerInfo:
+				setSurvivorInfo(packet, ipAddress, port);
+				break;
+			case NetworkID::ZombieInfo:
+				setZombieInfo(packet);
+				break;
+			case NetworkID::NewClient:
+				addNewClient(packet);
+			}
 		}
 	}
 }

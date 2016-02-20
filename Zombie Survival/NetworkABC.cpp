@@ -9,6 +9,8 @@ NetworkABC::NetworkABC(pyro::StateStack& stack, sf::Mutex& mutex, Player* player
 	, mPlayer(player)
 	, mSurvivors(survivors)
 	, mZombies(zombies)
+	, mPlaying(true)
+	, mTotalZombies(0)
 {
 	if (mSocket.bind(53000) != sf::Socket::Done)
 		if (mSocket.bind(53001) != sf::Socket::Done)

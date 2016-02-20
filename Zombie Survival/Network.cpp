@@ -36,9 +36,3 @@ unsigned Network::getTotalSurvivors() const
 	else
 		return mNetworkClient->getTotalSurvivors();
 }
-
-void Network::waveChanged()
-{
-	if (mHost)
-		mNetworkHost->waveChanged();
-}

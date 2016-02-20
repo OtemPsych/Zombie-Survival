@@ -4,7 +4,7 @@
 
 Projectile::Projectile(float speed, sf::Vector2f pos, float angle)
 	: Entity(speed)
-	, RectangleShape(sf::Vector2f(10.f, 10.f))
+	, RectangleShape(sf::Vector2f(7.f, 7.f))
 	, mStartingPosition(pos)
 	, mDestroyable(false)
 {

@@ -37,17 +37,39 @@ void Zombie::randomizeStartingPosition(sf::IntRect worldBounds)
 void Zombie::update(sf::Time dt)
 {
 	sf::Vector2f zombiePos(getPosition());
-	sf::Vector2f distanceVec(mPlayer->getPosition() - zombiePos);
+
+	sf::Vector2f distanceVec;
+	int startingSurvivor = 0;
+
+	if (mPlayer->isAlive())
+		distanceVec = mPlayer->getPosition() - zombiePos;
+	else
+	{
+		bool found = false;
+		for (unsigned i = 0; i < mSurvivors->size(); i++)
+			if (mSurvivors->at(i).isAlive())
+			{
+				distanceVec = mSurvivors->at(i).getPosition() - zombiePos;
+				startingSurvivor = i;
+				found = true;
+			}
+		if (!found)
+			return;
+	}
+
 	float magnitude = pyro::math::getMagnitude(distanceVec);
 
-	for (unsigned i = 0; i < mSurvivors->size(); i++)
+	for (unsigned i = startingSurvivor; i < mSurvivors->size(); i++)
 	{
-		sf::Vector2f newDistanceVec(mSurvivors->at(i).getPosition() - zombiePos);
-		float newMagnitude = pyro::math::getMagnitude(newDistanceVec);
-		if (std::min(std::abs(magnitude), std::abs(newMagnitude)) == newMagnitude)
+		if (mSurvivors->at(i).isAlive())
 		{
-			distanceVec = newDistanceVec;
-			magnitude = newMagnitude;
+			sf::Vector2f newDistanceVec(mSurvivors->at(i).getPosition() - zombiePos);
+			float newMagnitude = pyro::math::getMagnitude(newDistanceVec);
+			if (std::min(std::abs(magnitude), std::abs(newMagnitude)) == newMagnitude)
+			{
+				distanceVec = newDistanceVec;
+				magnitude = newMagnitude;
+			}
 		}
 	}
 	distanceVec = pyro::math::normalizeVector(distanceVec);

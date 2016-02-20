@@ -25,6 +25,9 @@ protected:
 	std::vector<Survivor>* mSurvivors;
 	std::vector<Zombie>*   mZombies;
 
+	bool				   mPlaying;
+	unsigned			   mTotalZombies;
+
 protected:
 	virtual void packetHandling() = 0;
 private:
@@ -36,5 +39,9 @@ public:
 	virtual ~NetworkABC();
 public:
 	inline unsigned getTotalSurvivors() const { return mAddressList.size(); }
+	inline void closeNetworkThread() { mPlaying = false; }
+
+	inline unsigned getTotalZombies() const { return mTotalZombies; }
+	inline void setTotalZombies(unsigned totalZombies) { mTotalZombies = totalZombies; }
 };
 #endif

@@ -27,7 +27,7 @@ public:
 			std::vector<Survivor>* survivors, std::vector<Zombie>* zombies);
 public:
 	unsigned getTotalSurvivors() const;
-	void waveChanged();
 	inline bool isHost() const { return mHost; }
+	inline void closeNetworkThread() { mHost ? mNetworkHost->closeNetworkThread() : mNetworkClient->closeNetworkThread(); }
 };
 #endif

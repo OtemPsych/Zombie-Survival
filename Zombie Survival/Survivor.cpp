@@ -6,8 +6,9 @@
 Survivor::Survivor(pyro::SoundPlayer<Sound>& soundPlayer, sf::RenderWindow& window)
 	: EntitySprite(280.f)
 	, mGunFired(false)
-	, mSoundPlayer(soundPlayer)
-	, mWindow(window)
+	, mSoundPlayer(&soundPlayer)
+	, mWindow(&window)
+	, mIsAlive(true)
 {
 }
 
@@ -20,14 +21,19 @@ void Survivor::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	for (const auto& projectile : mProjectiles)
 		target.draw(projectile, states);
 
-	target.draw(static_cast<Sprite>(*this), states);
+	if (mIsAlive)
+		target.draw(static_cast<Sprite>(*this), states);
 }
 
 Survivor::CollisionChecker Survivor::checkCollision(const Zombie& zombie)
 {
 	// Zombie & Survivor
-	if (getQuarterBounds().intersects(zombie.getQuarterBounds()))
-		return CollisionChecker(false, true);
+	if (mIsAlive)
+		if (getQuarterBounds().intersects(zombie.getQuarterBounds()))
+		{
+			mIsAlive = false;
+			return CollisionChecker(false, true);
+		}
 
 	//  Zombie & Projectile
 	for (unsigned i = 0; i < mProjectiles.size(); i++)
@@ -53,7 +59,7 @@ void Survivor::update(sf::Time dt)
 void Survivor::fireProjectile()
 {
 	mProjectiles.push_back(Projectile(1000.f, getPosition(), getRotation()));
-	mSoundPlayer.play(Sound::Gunshot, getPosition(), 5.f);
+	mSoundPlayer->play(Sound::Gunshot, getPosition(), 5.f);
 	mGunFired = true;
 }
 
@@ -82,28 +88,3 @@ Survivor::CollisionChecker::CollisionChecker(bool zombie, bool player)
 	, erasePlayer(player)
 {
 }
-
-//
-//void Survivor::update(sf::Time dt)
-//{
-//	if (mShot)
-//	{
-//		mProjectiles.push_back(Projectile(1000.f, getPosition(), getRotation()));
-//		mSoundPlayer.play(Sound::GunFire, getPosition(), 5.f);
-//		mShot = false;
-//	}
-//
-//	for (unsigned i = 0; i < mProjectiles.size(); i++)
-//		if (!mProjectiles[i].update(dt))
-//			mProjectiles.erase(mProjectiles.begin() + i);
-//}
-//
-//sf::Packet& operator<<(sf::Packet& packet, Survivor& survivor)
-//{
-//	return packet << *dynamic_cast<Entity*>(&survivor) << survivor.mShot;
-//}
-//
-//sf::Packet& operator>>(sf::Packet& packet, Survivor& survivor)
-//{
-//	return packet >> *dynamic_cast<Entity*>(&survivor) >> survivor.mShot;
-//}

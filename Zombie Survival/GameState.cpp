@@ -5,7 +5,7 @@ GameState::GameState(pyro::StateStack& stack, sf::RenderWindow& window)
 	: State(stack, window)
 	, mWorldBounds(0, 0, 5000, 5000)
 	, mPlayer(mWorldBounds, mWindow, mSoundPlayer)
-	, mCamera(window, dynamic_cast<Survivor*>(&mPlayer), mWorldBounds)
+	, mCamera(window, &mPlayer, &mSurvivors, mWorldBounds)
 	, mWave(0)
 	, mNetwork(stack, mMutex, &mPlayer, &mSurvivors, &mZombies)
 {
@@ -23,20 +23,16 @@ GameState::GameState(pyro::StateStack& stack, sf::RenderWindow& window)
 	mPlayer.setPosition(mWorldBounds.width / 2.f, mWorldBounds.height / 2.f);
 	mMutex.unlock();
 
-	mFont.loadFromFile("Assets/Fonts/WaveFont.ttf");
-	mWaveText.setFont(mFont);
-	mWaveText.setColor(sf::Color::White);
-	mWaveText.setCharacterSize(50);
-	mWaveText.setStyle(sf::Text::Bold);
-
-	mWaveTextOutline = mWaveText;
-	sf::Color primaryColor(mWaveText.getColor());
-	mWaveTextOutline.setColor(sf::Color(255 - primaryColor.r, 255 - primaryColor.g, 255 - primaryColor.b));
-	mWaveTextOutline.setPosition(mWaveText.getPosition().x + 2.f, mWaveText.getPosition().y + 2.f);
-
 	mMusicPlayer.loadTheme(Music::Ambient, "Assets/Music/Ambient.wav");
 	mMusicPlayer.setVolume(35.f);
 	mMusicPlayer.play(Music::Ambient);
+
+	setupTexts();
+
+	mMutex.lock();
+	mZombies.clear();
+	updateWave();
+	mMutex.unlock();
 }
 
 void GameState::updateWave()
@@ -47,20 +43,42 @@ void GameState::updateWave()
 		for (int i = 0; i < mWave * 15; i++)
 			mZombies.push_back(Zombie(&mPlayer, &mSurvivors, mTextures.get(Textures::Zombie), mWorldBounds));
 
-		mNetwork.waveChanged();
+		mPlayer.revive();
+		for (auto& survivor : mSurvivors)
+			survivor.revive();
 	}
 }
 
 void GameState::updateWaveText()
 {
 	mWaveText.setString("Wave " + std::to_string(mWave));
-	mWaveTextOutline.setString(mWaveText.getString());
 
 	sf::Vector2f cameraCenter(mCamera.getCenter());
 	sf::Vector2f cameraSize(mCamera.getSize());
 	sf::FloatRect textBounds(mWaveText.getGlobalBounds());
 	mWaveText.setPosition(cameraCenter.x + cameraSize.x / 2.f - textBounds.width - 10.f,
 						  cameraCenter.y - cameraSize.y / 2.f);
+
+	sf::Vector2f waveTextPos(mWaveText.getPosition());
+	mZombiesRemaining.setString(std::to_string(mZombies.size()) + " remaining");
+	mZombiesRemaining.setPosition(cameraCenter.x + cameraSize.x / 2.f - mZombiesRemaining.getGlobalBounds().width - 10.f,
+								  waveTextPos.y + textBounds.height + 25.f);
+}
+
+void GameState::setupTexts()
+{
+	mFont.loadFromFile("Assets/Fonts/WaveFont.ttf");
+
+	mWaveText.setFont(mFont);
+	mWaveText.setColor(sf::Color::White);
+	mWaveText.setCharacterSize(50);
+	mWaveText.setStyle(sf::Text::Bold);
+	mWaveText.centerOrigin();
+
+	mZombiesRemaining.setFont(mFont);
+	mZombiesRemaining.setColor(sf::Color::White);
+	mZombiesRemaining.setCharacterSize(18);
+	mZombiesRemaining.centerOrigin();
 }
 
 void GameState::setupResources()
@@ -86,9 +104,15 @@ void GameState::setupResources()
 
 bool GameState::handleEvent(const sf::Event& event)
 {
-	if (event.type == sf::Event::KeyPressed
-		&& event.key.code == sf::Keyboard::Escape)
-		requestStateClear();
+	if (event.type == sf::Event::KeyPressed)
+	{
+		if (event.key.code == sf::Keyboard::Escape)
+		{
+			mNetwork.closeNetworkThread();
+			requestStateClear();
+			return false;
+		}
+	}
 
 	mMutex.lock();
 	mPlayer.handleEvent(event);
@@ -99,8 +123,24 @@ bool GameState::handleEvent(const sf::Event& event)
 
 bool GameState::update(sf::Time dt)
 {
+	if (!mPlayer.isAlive())
+	{
+		bool allSurvivorsDead = true;
+		for (const auto& survivor : mSurvivors)
+			if (survivor.isAlive())
+				allSurvivorsDead = false;
+
+		if (allSurvivorsDead)
+		{
+			mNetwork.closeNetworkThread();
+			requestStateClear();
+			return false;
+		}
+	}
+
 	mMutex.lock();
-	mPlayer.update(dt);
+	if (mPlayer.isAlive())
+		mPlayer.update(dt);
 
 	for (unsigned i = mSurvivors.size(); i < mNetwork.getTotalSurvivors(); i++)
 	{
@@ -110,30 +150,25 @@ bool GameState::update(sf::Time dt)
 	}
 	for (auto& survivor : mSurvivors)
 		survivor.update(dt);
+	mMutex.unlock();
 
-	mCamera.update();
+	mCamera.update(dt);
 
 	updateWave();
 	updateWaveText();
 
+	mMutex.lock();
 	for (auto& zombie : mZombies)
 		zombie.update(dt);
 
 	for (unsigned i = 0; i < mZombies.size(); i++)
-	{
-		Player::CollisionChecker collisionChecker(mPlayer.checkCollision(mZombies[i]));
-		if (collisionChecker.eraseZombie)
+		if (mPlayer.checkCollision(mZombies[i]).eraseZombie)
 			mZombies.erase(mZombies.begin() + i);
 		else
 			for (unsigned j = 0; j < mSurvivors.size(); j++)
-			{
-				Survivor::CollisionChecker survivorCollisionChecker(mSurvivors[j].checkCollision(mZombies[i]));
-				if (survivorCollisionChecker.eraseZombie)
+				if (mSurvivors[j].checkCollision(mZombies[i]).eraseZombie)
 					mZombies.erase(mZombies.begin() + i);
-				//if (survivorCollisionChecker.erasePlayer)
-				//	mSurvivors.erase(mSurvivors.begin() + i);
-			}
-	}
+
 	mMutex.unlock();
 
 	return true;
@@ -144,13 +179,17 @@ void GameState::draw()
 	mWindow.draw(mGround);
 
 	mMutex.lock();
-	mWindow.draw(mPlayer);
+
+	if (mPlayer.isAlive())
+		mWindow.draw(mPlayer);
+
 	for (const auto& survivor : mSurvivors)
 		mWindow.draw(survivor);
+
 	for (const auto& zombie : mZombies)
 		mWindow.draw(zombie);
 	mMutex.unlock();
 
-	mWindow.draw(mWaveTextOutline, mWaveText.getTransform());
 	mWindow.draw(mWaveText);
+	mWindow.draw(mZombiesRemaining);
 }
