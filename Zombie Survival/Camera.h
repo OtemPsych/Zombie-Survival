@@ -14,11 +14,11 @@ private:
 	std::vector<Survivor>* mSurvivors;
 	sf::IntRect			   mWorldBounds;
 
-	int					   mFollowingCharacter;
+	int					   mCharacterFollowing;
 
 public:
 	Camera(sf::RenderWindow& window, Player* player,
-		std::vector<Survivor>* survivors, sf::IntRect worldBounds);
+		   std::vector<Survivor>* survivors, sf::IntRect worldBounds);
 public:
 	void handleEvent(const sf::Event& event);
 	void update(sf::Time dt);

@@ -12,6 +12,7 @@ private:
 
 private:
 	void sendNewClientInfo(sf::IpAddress ip, Port port);
+	void insertZombieInfo(sf::Packet& packet);
 
 	virtual void packetHandling();
 	virtual void handleReceiving();

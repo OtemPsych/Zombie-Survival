@@ -1,22 +1,40 @@
 #include "NetworkClient.h"
 #include "NetworkIdentifiers.h"
 
+#include "MultiplayerConnectState.h"
+
 NetworkClient::NetworkClient(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
 							 std::vector<Survivor>* survivors, std::vector<Zombie>* zombies)
 	: NetworkABC(stack, mutex, player, survivors, zombies)
 	, mThread(&NetworkClient::packetHandling, this)
 {
-	sf::IpAddress ipAddress;
-	std::cout << "\nHost's IP Address: ";
-	std::cin >> ipAddress;
+	const MultiplayerConnectState* multiplayerConnectState = dynamic_cast<const MultiplayerConnectState*>(stack.getState(pyro::StateID::PreGame1).get());
+	if (multiplayerConnectState != nullptr)
+	{
+		sf::IpAddress hostIp(multiplayerConnectState->getHostIp());
+		Port hostPort(static_cast<Port>(std::stoi(multiplayerConnectState->getHostPort())));
 
-	Port port;
-	std::cout << "      Host's Port: ";
-	std::cin >> port;
+		if (hostIp != sf::IpAddress::getPublicAddress() || hostPort != mSocket.getLocalPort())
+			mAddressList.push_back(std::make_pair(hostIp, hostPort));
 
-	mAddressList.push_back(std::make_pair(ipAddress, port));
+		mThread.launch();
+	}
 
-	mThread.launch();
+	////sf::IpAddress ipAddress;
+	////std::cout << "\nHost's IP Address: ";
+	////std::cin >> ipAddress;
+
+	////Port port;
+	////std::cout << "      Host's Port: ";
+	////std::cin >> port;
+
+	//sf::IpAddress hostIp("84.75.41.186");
+	//Port hostPort(53000);
+	//if (hostIp != sf::IpAddress::getPublicAddress() || hostPort != mSocket.getLocalPort())
+	//{
+	//	mAddressList.push_back(std::make_pair(hostIp, hostPort));
+	//	std::cout << "Connected to " << hostIp.toString() << std::endl;
+	//}
 }
 
 void NetworkClient::addNewClient(sf::Packet& packet)
@@ -30,6 +48,7 @@ void NetworkClient::addNewClient(sf::Packet& packet)
 		assert(packet >> ipAddress >> port);
 
 		mAddressList.push_back(std::make_pair(sf::IpAddress(ipAddress), port));
+		std::cout << ipAddress << " connected!\n";
 	}
 }
 

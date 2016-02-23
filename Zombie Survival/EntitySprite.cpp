@@ -52,7 +52,6 @@ sf::Packet& operator<<(sf::Packet& packet, EntitySprite& entitySprite)
 	sf::Vector2f entitySpritePos(entitySprite.getPosition());
 	assert(packet << static_cast<sf::Int32>(entitySpritePos.x));
 	assert(packet << static_cast<sf::Int32>(entitySpritePos.y));
-	assert(packet << static_cast<sf::Int16>(entitySprite.getRotation()));
 
 	assert(packet << *dynamic_cast<Entity*>(&entitySprite));
 	return packet;
@@ -62,12 +61,10 @@ sf::Packet& operator>>(sf::Packet& packet, EntitySprite& entitySprite)
 {
 	sf::Int32 entitySpritePosX;
 	sf::Int32 entitySpritePosY;
-	sf::Int16 entitySpriteRotation;
-	assert(packet >> entitySpritePosX >> entitySpritePosY >> entitySpriteRotation);
+	assert(packet >> entitySpritePosX >> entitySpritePosY);
 
 	entitySprite.setPosition(static_cast<float>(entitySpritePosX),
 							 static_cast<float>(entitySpritePosY));
-	entitySprite.setRotation(static_cast<float>(entitySpriteRotation));
 
 	assert(packet >> *dynamic_cast<Entity*>(&entitySprite));
 	return packet;

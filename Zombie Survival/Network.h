@@ -20,8 +20,6 @@ private:
 	std::unique_ptr<NetworkHost>   mNetworkHost;
 	std::unique_ptr<NetworkClient> mNetworkClient;
 
-private:
-	void setup();
 public:
 	Network(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
 			std::vector<Survivor>* survivors, std::vector<Zombie>* zombies);

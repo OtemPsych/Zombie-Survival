@@ -1,6 +1,8 @@
 #include "Network.h"
 #include "NetworkIdentifiers.h"
 
+#include "MultiplayerConnectState.h"
+
 #include <SFML/System/Sleep.hpp>
 
 Network::Network(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
@@ -9,24 +11,16 @@ Network::Network(pyro::StateStack& stack, sf::Mutex& mutex, Player* player,
 	, mNetworkHost(nullptr)
 	, mNetworkClient(nullptr)
 {
-	setup();
-	if (mHost)
-		mNetworkHost = std::unique_ptr<NetworkHost>(new NetworkHost(stack, mutex, player, survivors, zombies));
-	else
-		mNetworkClient = std::unique_ptr<NetworkClient>(new NetworkClient(stack, mutex, player, survivors, zombies));
-}
+	const auto* mpConnectState = dynamic_cast<const MultiplayerConnectState*>(stack.getState(pyro::StateID::PreGame1).get());
+	if (mpConnectState != nullptr)
+	{
+		mHost = (mpConnectState->getHostIp().empty() && mpConnectState->getHostPort().empty());
 
-void Network::setup()
-{
-	std::string response;
-	std::cout << "1| Host\n"
-			  << "2| Client\n\n";
-	do {
-		std::cin >> response;
-	} while (response != "1" && response != "2");
-
-	if (response == "1")
-		mHost = true;
+		if (mHost)
+			mNetworkHost = std::unique_ptr<NetworkHost>(new NetworkHost(stack, mutex, player, survivors, zombies));
+		else
+			mNetworkClient = std::unique_ptr<NetworkClient>(new NetworkClient(stack, mutex, player, survivors, zombies));
+	}
 }
 
 unsigned Network::getTotalSurvivors() const

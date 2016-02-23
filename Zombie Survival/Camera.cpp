@@ -9,7 +9,7 @@ Camera::Camera(sf::RenderWindow& window, Player* player,
 	, mPlayer(player)
 	, mSurvivors(survivors)
 	, mWorldBounds(worldBounds)
-	, mFollowingCharacter(-1)
+	, mCharacterFollowing(-1)
 {
 }
 
@@ -21,12 +21,12 @@ void Camera::handleEvent(const sf::Event& event)
 		{
 			if (event.key.code == sf::Keyboard::Left)
 			{
-				if (mFollowingCharacter - 1 >= 0)
-					mFollowingCharacter -= 1;
+				if (mCharacterFollowing - 1 >= 0)
+					mCharacterFollowing -= 1;
 			}
 			else if (event.key.code == sf::Keyboard::Right)
-				if (mFollowingCharacter + 1 < mSurvivors->size())
-					mFollowingCharacter += 1;
+				if (mCharacterFollowing + 1u < mSurvivors->size())
+					mCharacterFollowing += 1;
 		}
 	}
 }
@@ -34,27 +34,27 @@ void Camera::handleEvent(const sf::Event& event)
 void Camera::update(sf::Time dt)
 {
 	// Change Survivor Being Followed
-	bool followingCharacterDead = false;
-	if (mFollowingCharacter == -1) {
+	bool characterFollowingDead = false;
+	if (mCharacterFollowing == -1) {
 		if (!mPlayer->isAlive())
-			followingCharacterDead = true;
+			characterFollowingDead = true;
 	}
-	else if (!mSurvivors->at(mFollowingCharacter).isAlive())
-		followingCharacterDead = true;
+	else if (!mSurvivors->at(mCharacterFollowing).isAlive())
+		characterFollowingDead = true;
 	else if (mPlayer->isAlive())
-		mFollowingCharacter = -1;
+		mCharacterFollowing = -1;
 
-	if (followingCharacterDead)
+	if (characterFollowingDead)
 		for (unsigned i = 0; i < mSurvivors->size(); i++)
 			if (mSurvivors->at(i).isAlive())
-				mFollowingCharacter = i;
+				mCharacterFollowing = i;
 
 	// Update Camera Position
 	sf::Vector2f center;
-	if (mFollowingCharacter == -1)
+	if (mCharacterFollowing == -1)
 		center = mPlayer->getPosition();
 	else
-		center = mSurvivors->at(mFollowingCharacter).getPosition();
+		center = mSurvivors->at(mCharacterFollowing).getPosition();
 
 	sf::Vector2f halfViewSize(getSize() / 2.f);
 	sf::FloatRect visibleArea(center.x - halfViewSize.x, center.y - halfViewSize.y,

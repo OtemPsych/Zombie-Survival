@@ -67,6 +67,7 @@ sf::Packet& operator<<(sf::Packet& packet, Survivor& survivor)
 {
 	assert(packet << survivor.mGunFired);
 	survivor.mGunFired = false;
+	assert(packet << static_cast<sf::Int16>(survivor.getRotation()));
 	assert(packet << *dynamic_cast<EntitySprite*>(&survivor));
 	return packet;
 }
@@ -79,6 +80,10 @@ sf::Packet& operator>>(sf::Packet& packet, Survivor& survivor)
 		survivor.fireProjectile();
 		survivor.mGunFired = false;
 	}
+	sf::Int16 survivorRotation;
+	assert(packet >> survivorRotation);
+	survivor.setRotation(static_cast<float>(survivorRotation));
+
 	assert(packet >> *dynamic_cast<EntitySprite*>(&survivor));
 	return packet;
 }

@@ -1,3 +1,4 @@
+#include "MultiplayerConnectState.h"
 #include "GameState.h"
 
 #include <PYRO/Application.h>
@@ -11,8 +12,9 @@ int main()
 	app.setClearScreen(true);
 	app.setFPS(60);
 
+	app.registerState<MultiplayerConnectState>(pyro::StateID::PreGame1);
 	app.registerState<GameState>(pyro::StateID::Game);
-	app.pushState(pyro::StateID::Game);
+	app.pushState(pyro::StateID::PreGame1);
 	app.run();
 
 	return 0;

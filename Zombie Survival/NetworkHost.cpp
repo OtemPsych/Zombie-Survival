@@ -6,9 +6,6 @@ NetworkHost::NetworkHost(pyro::StateStack& stack, sf::Mutex& mutex, Player* play
 	: NetworkABC(stack, mutex, player, survivors, zombies)
 	, mThread(&NetworkHost::packetHandling, this)
 {
-	std::cout << "\nIP Address: " << sf::IpAddress::getPublicAddress().toString();
-	std::cout << "\n      Port: " << std::to_string(mSocket.getLocalPort()) << std::endl << std::endl;
-
 	mThread.launch();
 }
 
@@ -30,6 +27,14 @@ void NetworkHost::sendNewClientInfo(sf::IpAddress ip, Port port)
 	}
 
 	mSocket.send(newClientPacket, ip, port);
+}
+
+void NetworkHost::insertZombieInfo(sf::Packet& packet)
+{
+	assert(packet << static_cast<sf::Uint16>(NetworkID::ZombieInfo));
+	assert(packet << static_cast<sf::Uint16>(mZombies->size()));
+	for (unsigned i = 0; i < mZombies->size(); i++)
+		assert(packet << static_cast<sf::Uint16>(i) << mZombies->at(i));
 }
 
 void NetworkHost::packetHandling()
@@ -83,12 +88,7 @@ void NetworkHost::handleSending()
 	}
 
 	// Zombie Info
-	assert(clientPacket << static_cast<sf::Uint16>(NetworkID::ZombieInfo));
-	assert(clientPacket << static_cast<sf::Uint16>(mZombies->size()));
-	for (unsigned i = 0; i < mZombies->size(); i++)
-		if (clientPacket.getDataSize() < 65000)
-			assert(clientPacket <<  static_cast<sf::Uint16>(i) << mZombies->at(i));
-
+	insertZombieInfo(clientPacket);
 	mMutex.unlock();
 
 	for (const auto& address : mAddressList)

@@ -118,7 +118,7 @@ bool GameState::handleEvent(const sf::Event& event)
 	mPlayer.handleEvent(event);
 	mMutex.unlock();
 
-	return true;
+	return false;
 }
 
 bool GameState::update(sf::Time dt)
@@ -171,7 +171,7 @@ bool GameState::update(sf::Time dt)
 
 	mMutex.unlock();
 
-	return true;
+	return false;
 }
 
 void GameState::draw()
